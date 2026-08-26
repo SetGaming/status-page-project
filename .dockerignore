@@ -1,0 +1,11 @@
+venv/
+.git/
+.gitignore
+.env
+.env.*
+*.pem
+__pycache__/
+*.pyc
+*.pyo
+
+statuspage/statuspage/configuration.py
