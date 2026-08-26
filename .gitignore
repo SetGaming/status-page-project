@@ -1,0 +1,39 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Terraform variables
+*.tfvars
+תלחץ Copy על הקובייה בלבד ותדביק אותה ל־EC2. אל תעתיק שום טקסט מחוץ לקובייה.**.tfvars.example
+
+# Terraform overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# SSH
+id_rsa
+id_ed25519
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
