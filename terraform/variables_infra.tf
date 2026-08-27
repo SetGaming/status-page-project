@@ -1,13 +1,19 @@
-variable "bastion_allowed_cidr" {
-  description = "Public CIDR allowed to SSH to the Bastion"
-  type        = string
-  default     = "176.229.130.226/32"
+variable "bastion_allowed_cidrs" {
+  description = "Public CIDRs allowed to SSH to the Bastion"
+  type        = list(string)
+  default = [
+    "176.229.130.226/32",
+    "188.191.230.13/32"
+  ]
 }
 
-variable "eks_public_access_cidr" {
-  description = "Public CIDR allowed to reach the EKS API endpoint"
-  type        = string
-  default     = "176.229.130.226/32"
+variable "eks_public_access_cidrs" {
+  description = "Public CIDRs allowed to reach the EKS API endpoint"
+  type        = list(string)
+  default = [
+    "176.229.130.226/32",
+    "54.172.211.61/32"
+  ]
 }
 
 variable "ec2_key_name" {
