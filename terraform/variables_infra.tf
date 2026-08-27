@@ -57,3 +57,9 @@ variable "rds_instance_class" {
   type        = string
   default     = "db.t3.micro"
 }
+
+variable "owner" {
+  description = "Owner tag required by the AWS environment"
+  type        = string
+  default     = "avivneta"
+}

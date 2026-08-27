@@ -31,7 +31,10 @@ resource "aws_eks_node_group" "main" {
   subnet_ids      = aws_subnet.private[*].id
   instance_types  = [var.eks_node_instance_type]
   capacity_type   = "ON_DEMAND"
-  disk_size       = 30
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = tostring(aws_launch_template.eks_nodes.latest_version)
+  }
 
   scaling_config {
     desired_size = var.eks_desired_nodes
@@ -71,4 +74,14 @@ resource "aws_eks_access_policy_association" "jenkins_admin" {
   }
 
   depends_on = [aws_eks_access_entry.jenkins]
+}
+
+resource "aws_autoscaling_group_tag" "eks_owner" {
+  autoscaling_group_name = aws_eks_node_group.main.resources[0].autoscaling_groups[0].name
+
+  tag {
+    key                 = "Owner"
+    value               = var.owner
+    propagate_at_launch = true
+  }
 }
