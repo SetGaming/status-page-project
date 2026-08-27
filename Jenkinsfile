@@ -10,11 +10,7 @@ pipeline {
         EKS_CLUSTER = 'avivneta-status-page-dev-eks'
         HELM_RELEASE = 'status-page'
         HELM_NAMESPACE = 'status-page'
-        HELM_CHART = 'status-page-chart' 
-        EKS_CLUSTER = 'avivneta-status-page-dev-eks'
-        HELM_RELEASE = 'status-page'
-        HELM_NAMESPACE = 'status-page'
-        HELM_CHART = 'status-page-chart' 
+        HELM_CHART = 'status-page-chart'
     }
 
     stages {
