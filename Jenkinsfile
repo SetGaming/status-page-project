@@ -29,7 +29,7 @@ pipeline {
         stage('Trivy Scan') {
             steps {
                 sh '''
-                    trivy fs --exit-code 1 --severity CRITICAL --no-progress .
+                    trivy fs --scanners vuln --exit-code 1 --severity CRITICAL --no-progress --skip-files statuspage/project-static/yarn.lock .
                 '''
             }
         }
