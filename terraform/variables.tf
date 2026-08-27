@@ -1,29 +1,29 @@
 variable "aws_region" {
-  description = "AWS region"
+  description = "AWS region used by the project"
   type        = string
   default     = "us-east-1"
 }
 
 variable "project_name" {
-  description = "Project name"
+  description = "Project name used for resource naming"
   type        = string
   default     = "status-page"
 }
 
 variable "environment" {
-  description = "Environment"
+  description = "Deployment environment"
   type        = string
   default     = "dev"
 }
 
 variable "vpc_cidr" {
-  description = "VPC CIDR"
+  description = "CIDR block for the project VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidrs" {
-  description = "Public subnet CIDRs"
+  description = "CIDR blocks for public subnets"
   type        = list(string)
 
   default = [
@@ -33,7 +33,7 @@ variable "public_subnet_cidrs" {
 }
 
 variable "private_subnet_cidrs" {
-  description = "Private subnet CIDRs"
+  description = "CIDR blocks for private subnets"
   type        = list(string)
 
   default = [

@@ -2,7 +2,9 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+# -----------------------------------------------
 # VPC
+# -----------------------------------------------
 
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
@@ -14,7 +16,9 @@ resource "aws_vpc" "main" {
   }
 }
 
+# -----------------------------------------------
 # Internet Gateway
+# -----------------------------------------------
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
@@ -24,7 +28,9 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
+# -----------------------------------------------
 # Public Subnets
+# -----------------------------------------------
 
 resource "aws_subnet" "public" {
   count = length(var.public_subnet_cidrs)
@@ -40,7 +46,9 @@ resource "aws_subnet" "public" {
   }
 }
 
+# -----------------------------------------------
 # Private Subnets
+# -----------------------------------------------
 
 resource "aws_subnet" "private" {
   count = length(var.private_subnet_cidrs)
@@ -55,7 +63,9 @@ resource "aws_subnet" "private" {
   }
 }
 
+# -----------------------------------------------
 # Public Route Table
+# -----------------------------------------------
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -78,7 +88,9 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# -----------------------------------------------
 # Private Route Table
+# -----------------------------------------------
 
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
@@ -95,6 +107,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+# NOTE:
 # NAT Gateway is intentionally not created yet.
-# We will decide the private subnet egress design
-# before creating resources that generate monthly costs.
+# We will add private-subnet Internet access later
+# after reviewing the final architecture and monthly cost.
