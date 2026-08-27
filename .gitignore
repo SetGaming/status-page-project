@@ -22,3 +22,6 @@ statuspage/statuspage/configuration.py
 *.tfstate
 *.tfstate.*
 
+
+# Terraform plan files
+*.tfplan
