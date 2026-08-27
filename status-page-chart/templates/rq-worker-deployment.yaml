@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: rq-worker
+  namespace: {{ .Release.Namespace }}
+
+  labels:
+    {{- include "status-page.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+
+  selector:
+    matchLabels:
+      {{- include "status-page.workerSelectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "status-page.workerSelectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+        - name: rq-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecret }}
+
+          command:
+            - python
+            - manage.py
+            - rqworker
+
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}

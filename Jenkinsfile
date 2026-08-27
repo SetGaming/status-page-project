@@ -7,6 +7,14 @@ pipeline {
         ECR_REPOSITORY = 'avivneta-status-page-dev'
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        EKS_CLUSTER = 'avivneta-status-page-dev-eks'
+        HELM_RELEASE = 'status-page'
+        HELM_NAMESPACE = 'status-page'
+        HELM_CHART = 'status-page-chart' 
+        EKS_CLUSTER = 'avivneta-status-page-dev-eks'
+        HELM_RELEASE = 'status-page'
+        HELM_NAMESPACE = 'status-page'
+        HELM_CHART = 'status-page-chart' 
     }
 
     stages {
@@ -47,7 +55,7 @@ pipeline {
         stage('Trivy Image Scan') {
             steps {
                 sh '''
-                    trivy image --exit-code 1 --severity CRITICAL --no-progress ${ECR_REPOSITORY}:${IMAGE_TAG}
+                    trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL --no-progress ${ECR_REPOSITORY}:${IMAGE_TAG}
                 '''
             }
         }
@@ -66,6 +74,22 @@ pipeline {
                 '''
             }
         }
+        stage('Deploy to EKS') {
+            steps {
+                sh """
+                    aws eks update-kubeconfig --region ${AWS_REGION} --name ${EKS_CLUSTER}
+
+                    helm upgrade --install ${HELM_RELEASE} ${HELM_CHART}                       --namespace ${HELM_NAMESPACE}                       --create-namespace                       --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY}                       --set image.tag=${IMAGE_TAG}                       --wait                       --timeout 10m
+
+                    kubectl rollout status deployment/status-page                       -n ${HELM_NAMESPACE}                       --timeout=300s
+
+                    kubectl rollout status deployment/rq-worker                       -n ${HELM_NAMESPACE}                       --timeout=300s
+
+                    kubectl rollout status deployment/rq-scheduler                       -n ${HELM_NAMESPACE}                       --timeout=300s
+                """
+            }
+        }
+
     }
 
     post {

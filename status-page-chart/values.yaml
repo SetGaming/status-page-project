@@ -1,0 +1,81 @@
+image:
+  repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/avivneta-status-page-dev
+  tag: latest
+  pullPolicy: Always
+
+existingSecret: status-page-secrets
+
+statusPage:
+  replicaCount: 2
+  containerPort: 8000
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+worker:
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+scheduler:
+  replicaCount: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+redis:
+  replicaCount: 1
+
+  image:
+    repository: redis
+    tag: "7"
+    pullPolicy: IfNotPresent
+
+  service:
+    port: 6379
+
+  persistence:
+    enabled: true
+    storageClass: gp2
+    accessMode: ReadWriteOnce
+    size: 1Gi
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+ingress:
+  enabled: true
+  className: alb
+
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+
+  host: ""
+  path: /
+  pathType: Prefix

@@ -12,7 +12,6 @@ variable "eks_public_access_cidrs" {
   type        = list(string)
   default = [
     "176.229.130.226/32",
-    "54.172.211.61/32"
   ]
 }
 

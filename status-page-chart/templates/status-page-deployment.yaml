@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: {{ include "status-page.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+
+  labels:
+    {{- include "status-page.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.statusPage.replicaCount }}
+
+  selector:
+    matchLabels:
+      {{- include "status-page.appSelectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "status-page.appSelectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+        - name: status-page
+
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecret }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.statusPage.containerPort }}
+              protocol: TCP
+
+          command:
+            - /bin/sh
+            - -c
+
+          args:
+            - |
+              python manage.py collectstatic --noinput
+              exec gunicorn statuspage.wsgi:application --bind 0.0.0.0:{{ .Values.statusPage.containerPort }}
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          resources:
+            {{- toYaml .Values.statusPage.resources | nindent 12 }}

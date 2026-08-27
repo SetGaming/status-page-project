@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: StatefulSet
+
+metadata:
+  name: redis
+  namespace: {{ .Release.Namespace }}
+
+  labels:
+    {{- include "status-page.labels" . | nindent 4 }}
+
+spec:
+  serviceName: redis
+  replicas: {{ .Values.redis.replicaCount }}
+
+  selector:
+    matchLabels:
+      {{- include "status-page.redisSelectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "status-page.redisSelectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+        - name: redis
+
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redis.service.port }}
+              protocol: TCP
+
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+
+  volumeClaimTemplates:
+    - metadata:
+        name: redis-data
+
+      spec:
+        accessModes:
+          - {{ .Values.redis.persistence.accessMode | quote }}
+
+        storageClassName: {{ .Values.redis.persistence.storageClass | quote }}
+
+        resources:
+          requests:
+            storage: {{ .Values.redis.persistence.size }}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: rq-scheduler
+  namespace: {{ .Release.Namespace }}
+
+  labels:
+    {{- include "status-page.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.scheduler.replicaCount }}
+
+  selector:
+    matchLabels:
+      {{- include "status-page.schedulerSelectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "status-page.schedulerSelectorLabels" . | nindent 8 }}
+
+    spec:
+      containers:
+        - name: rq-scheduler
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecret }}
+
+          command:
+            - python
+            - manage.py
+            - rqscheduler
+
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}
