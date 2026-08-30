@@ -1,0 +1,78 @@
+grafana:
+  enabled: true
+
+  service:
+    type: ClusterIP
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+
+
+prometheus:
+  enabled: true
+
+  prometheusSpec:
+    retention: 3d
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+
+alertmanager:
+  enabled: true
+
+  config:
+    global:
+      resolve_timeout: 5m
+      smtp_smarthost: "smtp.gmail.com:587"
+      smtp_from: "neta.vizenberg@gmail.com"
+      smtp_auth_username: "neta.vizenberg@gmail.com"
+      smtp_auth_password_file: "/etc/alertmanager/secrets/alertmanager-gmail/app-password"
+      smtp_require_tls: true
+
+    route:
+      group_by:
+        - namespace
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: "null"
+
+      routes:
+        - matchers:
+            - alertname = "StatusPageDeploymentUnavailable"
+          receiver: email
+
+        - matchers:
+            - alertname = "Watchdog"
+          receiver: "null"
+
+    receivers:
+      - name: email
+        email_configs:
+          - to: "neta.vizenberg@gmail.com"
+            send_resolved: true
+
+      - name: "null"
+
+  alertmanagerSpec:
+    secrets:
+      - alertmanager-gmail
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi

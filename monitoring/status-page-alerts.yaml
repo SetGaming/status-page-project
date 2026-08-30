@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: status-page-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+
+spec:
+  groups:
+    - name: status-page.rules
+      rules:
+        - alert: StatusPageDeploymentUnavailable
+          expr: kube_deployment_status_replicas_unavailable{namespace="status-page"} > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Status Page deployment has unavailable replicas"
+            description: "A deployment in the status-page namespace has had unavailable replicas for more than 2 minutes."

@@ -27,3 +27,6 @@ statuspage/statuspage/configuration.py
 *.tfplan
 register-domain.json
 *.tfplan.json
+monitoring/default-values.yaml
+monitoring/rendered.yaml
+*.swp
