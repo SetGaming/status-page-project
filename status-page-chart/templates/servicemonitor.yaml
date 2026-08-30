@@ -1,0 +1,24 @@
+{{- if .Values.statusPage.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+
+metadata:
+  name: {{ include "status-page.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+
+  labels:
+    release: monitoring
+    {{- include "status-page.labels" . | nindent 4 }}
+
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "status-page.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.statusPage.metrics.interval }}
+      scrapeTimeout: 10s
+{{- end }}

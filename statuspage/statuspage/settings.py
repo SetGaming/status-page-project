@@ -81,7 +81,7 @@ for param in PARAMS:
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django_prometheus.db.backends.postgresql',
         'NAME': DATABASE.get('NAME'),
         'USER': DATABASE.get('USER'),
         'PASSWORD': DATABASE.get('PASSWORD'),
@@ -164,6 +164,7 @@ LOGIN_URL = f'/{BASE_PATH}dashboard/login/'
 LOGIN_REDIRECT_URL = f'/{BASE_PATH}dashboard/'
 
 INSTALLED_APPS = [
+    'django_prometheus',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -191,6 +192,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -204,6 +206,7 @@ MIDDLEWARE = [
     'statuspage.middleware.APIVersionMiddleware',
     'statuspage.middleware.ObjectChangeMiddleware',
     'statuspage.middleware.DynamicConfigMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'statuspage.urls'
@@ -244,6 +247,9 @@ USE_I18N = True
 USE_L10N = False
 USE_TZ = True
 USE_DEPRECATED_PYTZ = True
+
+PROMETHEUS_METRICS_EXPORT_PORT = 8001
+PROMETHEUS_METRICS_EXPORT_ADDRESS = ''
 
 WSGI_APPLICATION = 'statuspage.wsgi.application'
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

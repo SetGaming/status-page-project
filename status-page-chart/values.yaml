@@ -9,6 +9,11 @@ statusPage:
   replicaCount: 2
   containerPort: 8000
 
+  metrics:
+    enabled: true
+    port: 8001
+    interval: 30s
+
   service:
     type: ClusterIP
     port: 80

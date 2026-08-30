@@ -26,6 +26,6 @@ COPY statuspage/statuspage/configuration_docker.py /app/statuspage/statuspage/co
 
 WORKDIR /app/statuspage
 
-EXPOSE 8000
+EXPOSE 8000 8001
 
 CMD ["gunicorn", "statuspage.wsgi:application", "--bind", "0.0.0.0:8000"]
