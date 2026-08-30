@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: status-page-observability-dashboard
+  namespace: monitoring
+
+  labels:
+    grafana_dashboard: "1"
+
+data:
+  status-page-observability.json: |
+    {
+      "editable": true,
+      "graphTooltip": 1,
+
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "targets": [
+            {
+              "expr": "sum(kube_deployment_status_replicas_available{namespace=\"status-page\",deployment=\"status-page\"})",
+              "refId": "A"
+            }
+          ],
+          "title": "Status Page Ready Replicas",
+          "type": "stat"
+        },
+
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 5,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "id": 2,
+          "targets": [
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"status-page\"}[1h]))",
+              "refId": "A"
+            }
+          ],
+          "title": "Pod Restarts - Last Hour",
+          "type": "stat"
+        },
+
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 3,
+          "targets": [
+            {
+              "expr": "sum(rate(django_http_requests_total_by_method_total[5m])) by (method)",
+              "legendFormat": "{{method}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Django HTTP Request Rate",
+          "type": "timeseries"
+        },
+
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 8
+          },
+          "id": 4,
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95,sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le))",
+              "legendFormat": "p95",
+              "refId": "A"
+            }
+          ],
+          "title": "Django HTTP Latency P95",
+          "type": "timeseries"
+        },
+
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 8
+          },
+          "id": 5,
+          "targets": [
+            {
+              "expr": "sum(rate(django_db_execute_total[5m]))",
+              "legendFormat": "queries/sec",
+              "refId": "A"
+            }
+          ],
+          "title": "PostgreSQL Query Rate",
+          "type": "timeseries"
+        },
+
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "gridPos": {
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 16
+          },
+          "id": 6,
+          "targets": [
+            {
+              "expr": "{namespace=\"status-page\"}",
+              "refId": "A"
+            }
+          ],
+          "title": "Status Page Kubernetes Logs",
+          "type": "logs"
+        }
+      ],
+
+      "refresh": "30s",
+
+      "schemaVersion": 41,
+
+      "tags": [
+        "status-page",
+        "kubernetes",
+        "prometheus",
+        "loki"
+      ],
+
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+
+      "timezone": "browser",
+
+      "title": "Status Page - Observability",
+
+      "uid": "status-page-observability",
+
+      "version": 1
+    }
