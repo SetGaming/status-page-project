@@ -35,3 +35,16 @@ output "rds_endpoint" {
 output "database_secret_arn" {
   value = aws_secretsmanager_secret.database.arn
 }
+
+
+output "app_hostname" {
+  value = "app.avivneta-statuspage.com"
+}
+
+output "acm_certificate_arn" {
+  value = aws_acm_certificate_validation.app.certificate_arn
+}
+
+output "route53_zone_id" {
+  value = data.aws_route53_zone.main.zone_id
+}

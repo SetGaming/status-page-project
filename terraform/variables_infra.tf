@@ -2,7 +2,7 @@ variable "bastion_allowed_cidrs" {
   description = "Public CIDRs allowed to SSH to the Bastion"
   type        = list(string)
   default = [
-    "176.229.130.226/32",
+    "77.126.130.161/32",
     "188.191.230.13/32"
   ]
 }
@@ -11,7 +11,8 @@ variable "eks_public_access_cidrs" {
   description = "Public CIDRs allowed to reach the EKS API endpoint"
   type        = list(string)
   default = [
-    "176.229.130.226/32",
+    "77.126.130.161/32",
+    "188.191.230.13/32"
   ]
 }
 
@@ -67,4 +68,11 @@ variable "owner" {
   description = "Owner tag required by the AWS environment"
   type        = string
   default     = "avivneta"
+}
+
+
+variable "ubuntu_ami_id" {
+  description = "Pinned Ubuntu AMI for Bastion and Jenkins"
+  type        = string
+  default     = "ami-0d7f022123f8ff19d"
 }

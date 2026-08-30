@@ -1,6 +1,10 @@
 resource "aws_eip" "bastion" {
   domain = "vpc"
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name = "avivneta-${var.project_name}-${var.environment}-bastion-eip"
   }

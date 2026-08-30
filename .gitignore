@@ -25,3 +25,5 @@ statuspage/statuspage/configuration.py
 
 # Terraform plan files
 *.tfplan
+register-domain.json
+*.tfplan.json
