@@ -13,6 +13,8 @@ statusPage:
     type: ClusterIP
     port: 80
 
+  healthCheckHost: app.avivneta-statuspage.com
+
   resources:
     requests:
       cpu: 100m
@@ -67,6 +69,7 @@ redis:
     limits:
       cpu: 250m
       memory: 256Mi
+
 ingress:
   enabled: true
   className: alb
@@ -74,8 +77,10 @@ ingress:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: 'arn:aws:acm:us-east-1:992382545251:certificate/1e84d159-5280-42db-aa5a-cf0c225f592e'
 
-  host: ""
+  host: app.avivneta-statuspage.com
   path: /
   pathType: Prefix

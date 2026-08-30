@@ -49,6 +49,9 @@ spec:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ .Values.statusPage.healthCheckHost | quote }}
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
@@ -58,6 +61,9 @@ spec:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ .Values.statusPage.healthCheckHost | quote }}
             initialDelaySeconds: 30
             periodSeconds: 20
             timeoutSeconds: 5
