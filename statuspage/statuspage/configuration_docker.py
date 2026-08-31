@@ -20,24 +20,67 @@ DATABASE = {
     'CONN_MAX_AGE': 300,
 }
 
-# Redis database settings. Redis is used for caching and for queuing background tasks. A separate configuration exists
-# for each. Full connection details are required.
-REDIS = {
-    'tasks': {
-        'HOST': os.getenv('REDIS_HOST', 'localhost'),
-        'PORT': int(os.getenv('REDIS_PORT', '6379')),
+# Redis database settings. Redis is used for caching and for queuing background tasks.
+#
+# REDIS_SENTINELS should be a comma-separated list in host:port format.
+# If REDIS_SENTINELS is empty, the application falls back to REDIS_HOST/REDIS_PORT.
+
+def _parse_redis_sentinels():
+    raw = os.getenv('REDIS_SENTINELS', '').strip()
+
+    if not raw:
+        return []
+
+    sentinels = []
+
+    for entry in raw.split(','):
+        entry = entry.strip()
+
+        if not entry:
+            continue
+
+        host, port = entry.rsplit(':', 1)
+        sentinels.append((host, int(port)))
+
+    return sentinels
+
+
+REDIS_SENTINELS = _parse_redis_sentinels()
+REDIS_SENTINEL_SERVICE = os.getenv(
+    'REDIS_SENTINEL_SERVICE',
+    'status-page-master'
+)
+
+
+def _redis_config(database):
+    config = {
         'PASSWORD': os.getenv('REDIS_PASSWORD', ''),
-        'DATABASE': 0,
-        'SSL': False,
-    },
-    'caching': {
-        'HOST': os.getenv('REDIS_HOST', 'localhost'),
-        'PORT': int(os.getenv('REDIS_PORT', '6379')),
-        'PASSWORD': os.getenv('REDIS_PASSWORD', ''),
-        'DATABASE': 1,
+        'DATABASE': database,
         'SSL': False,
     }
+
+    if REDIS_SENTINELS:
+        config.update({
+            'SENTINELS': REDIS_SENTINELS,
+            'SENTINEL_SERVICE': REDIS_SENTINEL_SERVICE,
+            'SENTINEL_TIMEOUT': int(
+                os.getenv('REDIS_SENTINEL_TIMEOUT', '10')
+            ),
+        })
+    else:
+        config.update({
+            'HOST': os.getenv('REDIS_HOST', 'localhost'),
+            'PORT': int(os.getenv('REDIS_PORT', '6379')),
+        })
+
+    return config
+
+
+REDIS = {
+    'tasks': _redis_config(0),
+    'caching': _redis_config(1),
 }
+
 
 # Define the URL which will be used e.g. in E-Mails
 SITE_URL = os.getenv('SITE_URL', '')

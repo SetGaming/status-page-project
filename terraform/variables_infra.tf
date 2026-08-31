@@ -43,7 +43,7 @@ variable "eks_node_instance_type" {
 variable "eks_desired_nodes" {
   description = "Desired EKS worker node count"
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "eks_min_nodes" {
@@ -55,7 +55,7 @@ variable "eks_min_nodes" {
 variable "eks_max_nodes" {
   description = "Maximum EKS worker node count"
   type        = number
-  default     = 2
+  default     = 3
 }
 
 variable "rds_instance_class" {

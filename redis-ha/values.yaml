@@ -1,0 +1,66 @@
+architecture: replication
+
+auth:
+  enabled: true
+  sentinel: false
+  existingSecret: redis-ha-auth
+  existingSecretPasswordKey: redis-password
+
+master:
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 1Gi
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-ha
+          topologyKey: kubernetes.io/hostname
+
+replica:
+  replicaCount: 3
+
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 1Gi
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/instance: redis-ha
+          topologyKey: kubernetes.io/hostname
+
+sentinel:
+  enabled: true
+  masterSet: status-page-master
+  quorum: 2
+
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
