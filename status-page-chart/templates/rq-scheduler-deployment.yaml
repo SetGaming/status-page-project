@@ -30,6 +30,21 @@ spec:
             - secretRef:
                 name: {{ .Values.existingSecret }}
 
+          {{- if .Values.redisHA.enabled }}
+          env:
+            - name: REDIS_SENTINELS
+              value: {{ .Values.redisHA.sentinels | quote }}
+
+            - name: REDIS_SENTINEL_SERVICE
+              value: {{ .Values.redisHA.masterSet | quote }}
+
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redisHA.authSecret | quote }}
+                  key: {{ .Values.redisHA.authSecretKey | quote }}
+          {{- end }}
+
           command:
             - python
             - manage.py

@@ -5,6 +5,13 @@ image:
 
 existingSecret: status-page-secrets
 
+redisHA:
+  enabled: true
+  sentinels: "redis-ha-node-0.redis-ha-headless.status-page.svc.cluster.local:26379,redis-ha-node-1.redis-ha-headless.status-page.svc.cluster.local:26379,redis-ha-node-2.redis-ha-headless.status-page.svc.cluster.local:26379"
+  masterSet: "status-page-master"
+  authSecret: "redis-ha-auth"
+  authSecretKey: "redis-password"
+
 statusPage:
   replicaCount: 2
   containerPort: 8000
@@ -51,6 +58,8 @@ scheduler:
       memory: 256Mi
 
 redis:
+  enabled: false
+
   replicaCount: 1
 
   image:
