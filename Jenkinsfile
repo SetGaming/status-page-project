@@ -381,10 +381,10 @@ pipeline {
 
             steps {
                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'github-status-page-write',
-                        usernameVariable: 'GITHUB_USER',
-                        passwordVariable: 'GITHUB_TOKEN'
+                    sshUserPrivateKey(
+                        credentialsId: 'github-status-page-write-ssh',
+                        keyFileVariable: 'GIT_SSH_KEY',
+                        usernameVariable: 'GIT_SSH_USER'
                     )
                 ]) {
                     sh '''
@@ -426,16 +426,25 @@ new = f'  tag: "{image_tag}"'
 print(f"{old} -> {new}")
 
 lines[tag_index] = new
-
-p.write_text("\n".join(lines) + "\n")
+p.write_text("\\n".join(lines) + "\\n")
 PYUPDATE
 
                         echo
                         echo "===== VALIDATE GIT CHANGE ====="
 
                         git diff --check
-
                         git diff -- status-page-chart/values.yaml
+
+                        echo
+                        echo "===== VERIFY REMOTE DID NOT CHANGE ====="
+
+                        git fetch origin main
+
+                        if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+                            echo "ERROR: origin/main changed while this build was running"
+                            echo "Refusing to overwrite newer Git changes"
+                            exit 1
+                        fi
 
                         git config user.name "Jenkins GitOps"
                         git config user.email "jenkins-gitops@users.noreply.github.com"
@@ -447,34 +456,17 @@ PYUPDATE
                             exit 0
                         fi
 
-                        git commit                           -m "chore(gitops): deploy image ${IMAGE_TAG} [skip ci]"
-
-                        ASKPASS_SCRIPT=$(mktemp)
-
-                        cleanup_git_auth() {
-                            rm -f "$ASKPASS_SCRIPT"
-                        }
-
-                        trap cleanup_git_auth EXIT
-
-                        cat > "$ASKPASS_SCRIPT" <<'EOF'
-#!/bin/sh
-case "$1" in
-  *Username*)
-    printf '%s\n' "$GITHUB_USER"
-    ;;
-  *Password*)
-    printf '%s\n' "$GITHUB_TOKEN"
-    ;;
-esac
-EOF
-
-                        chmod 700 "$ASKPASS_SCRIPT"
+                        git commit \
+                          -m "chore(gitops): deploy image ${IMAGE_TAG} [skip ci]"
 
                         echo
-                        echo "===== PUSH GITOPS DESIRED STATE ====="
+                        echo "===== PUSH GITOPS DESIRED STATE VIA SSH ====="
 
-                        GIT_ASKPASS="$ASKPASS_SCRIPT"                         GIT_TERMINAL_PROMPT=0                         git push                           https://github.com/SetGaming/status-page-project.git                           HEAD:main
+                        export GIT_SSH_COMMAND="ssh -i $GIT_SSH_KEY -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+
+                        git push \
+                          git@github.com:SetGaming/status-page-project.git \
+                          HEAD:main
                     '''
                 }
             }
