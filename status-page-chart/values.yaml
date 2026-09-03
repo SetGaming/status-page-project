@@ -1,6 +1,6 @@
 image:
   repository: 992382545251.dkr.ecr.us-east-1.amazonaws.com/avivneta-status-page-dev
-  tag: "7"
+  tag: "13"
   pullPolicy: Always
 
 existingSecret: status-page-secrets
