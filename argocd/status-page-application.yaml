@@ -17,3 +17,8 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: status-page
+
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
