@@ -65,3 +65,12 @@ notifications:
 configs:
   cm:
     admin.enabled: true
+    accounts.aviv: login
+    accounts.neta: login
+
+  rbac:
+    policy.default: role:readonly
+    policy.csv: |
+      p, role:status-page-deployer, applications, sync, default/status-page, allow
+      g, aviv, role:status-page-deployer
+      g, neta, role:status-page-deployer
