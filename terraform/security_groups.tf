@@ -48,6 +48,14 @@ resource "aws_security_group" "jenkins" {
     security_groups = [aws_security_group.bastion.id]
   }
 
+  ingress {
+    description     = "Jenkins UI from Client VPN"
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.client_vpn.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -85,29 +93,35 @@ resource "aws_security_group" "rds" {
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "rds_from_eks" {
-  security_group_id            = aws_security_group.rds.id
-  referenced_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
-  description                  = "PostgreSQL from EKS cluster security group"
-  from_port                    = 5432
-  to_port                      = 5432
-  ip_protocol                  = "tcp"
+resource "aws_vpc_security_group_ingress_rule" "eks_api_from_bastion" {
+  security_group_id            = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+  referenced_security_group_id = aws_security_group.bastion.id
+
+  from_port   = 443
+  to_port     = 443
+  ip_protocol = "tcp"
+
+  description = "EKS API from Bastion"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "eks_api_from_jenkins" {
   security_group_id            = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
   referenced_security_group_id = aws_security_group.jenkins.id
-  description                  = "EKS API from Jenkins"
-  from_port                    = 443
-  to_port                      = 443
-  ip_protocol                  = "tcp"
+
+  from_port   = 443
+  to_port     = 443
+  ip_protocol = "tcp"
+
+  description = "EKS API from Jenkins"
 }
 
-resource "aws_vpc_security_group_ingress_rule" "eks_api_from_bastion" {
-  security_group_id            = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
-  referenced_security_group_id = aws_security_group.bastion.id
-  description                  = "EKS API from Bastion"
-  from_port                    = 443
-  to_port                      = 443
-  ip_protocol                  = "tcp"
+resource "aws_vpc_security_group_ingress_rule" "rds_from_eks" {
+  security_group_id            = aws_security_group.rds.id
+  referenced_security_group_id = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+
+  from_port   = 5432
+  to_port     = 5432
+  ip_protocol = "tcp"
+
+  description = "PostgreSQL from EKS cluster security group"
 }
