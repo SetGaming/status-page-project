@@ -11,11 +11,7 @@ pipeline {
 
         IMAGE_TAG = "${BUILD_NUMBER}"
 
-        EKS_CLUSTER = 'avivneta-status-page-dev-eks'
-
-        HELM_RELEASE = 'status-page'
-        HELM_NAMESPACE = 'status-page'
-        HELM_CHART = 'status-page-chart'
+        SKIP_PIPELINE = 'false'
     }
 
     stages {
@@ -26,7 +22,32 @@ pipeline {
             }
         }
 
+        stage('Detect GitOps Commit') {
+            steps {
+                script {
+                    def commitMessage = sh(
+                        script: 'git log -1 --pretty=%B',
+                        returnStdout: true
+                    ).trim()
+
+                    if (commitMessage.contains('[skip ci]')) {
+                        env.SKIP_PIPELINE = 'true'
+                        currentBuild.description = 'GitOps state commit - CI skipped'
+                        echo 'GitOps-generated commit detected. CI stages will be skipped.'
+                    } else {
+                        env.SKIP_PIPELINE = 'false'
+                    }
+                }
+            }
+        }
+
         stage('Tests') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     echo "Checking Python source..."
@@ -41,6 +62,12 @@ pipeline {
         }
 
         stage('Trivy Scan') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     trivy fs \
@@ -55,6 +82,12 @@ pipeline {
         }
 
         stage('Docker Build') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     docker build \
@@ -66,6 +99,12 @@ pipeline {
         }
 
         stage('Runtime Validation') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     set -eu
@@ -282,6 +321,12 @@ pipeline {
         }
 
         stage('Trivy Image Scan') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     trivy image \
@@ -295,6 +340,12 @@ pipeline {
         }
 
         stage('Push to ECR') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
                 sh '''
                     aws ecr get-login-password \
@@ -321,39 +372,111 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
+        stage('Update GitOps Desired State') {
+            when {
+                expression {
+                    env.SKIP_PIPELINE != 'true'
+                }
+            }
+
             steps {
-                sh '''
-                    aws eks update-kubeconfig \
-                      --region ${AWS_REGION} \
-                      --name ${EKS_CLUSTER}
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'github-status-page-write',
+                        usernameVariable: 'GITHUB_USER',
+                        passwordVariable: 'GITHUB_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        set -eu
 
-                    helm upgrade \
-                      --install \
-                      ${HELM_RELEASE} \
-                      ${HELM_CHART} \
-                      --namespace ${HELM_NAMESPACE} \
-                      --create-namespace \
-                      --set image.repository=${ECR_REGISTRY}/${ECR_REPOSITORY} \
-                      --set image.tag=${IMAGE_TAG} \
-                      --wait \
-                      --timeout 10m
+                        echo "===== UPDATE GITOPS IMAGE TAG ====="
 
-                    kubectl rollout status \
-                      deployment/status-page \
-                      -n ${HELM_NAMESPACE} \
-                      --timeout=300s
+                        python3 - <<'PYUPDATE'
+from pathlib import Path
+import os
 
-                    kubectl rollout status \
-                      deployment/rq-worker \
-                      -n ${HELM_NAMESPACE} \
-                      --timeout=300s
+p = Path("status-page-chart/values.yaml")
+lines = p.read_text().splitlines()
 
-                    kubectl rollout status \
-                      deployment/rq-scheduler \
-                      -n ${HELM_NAMESPACE} \
-                      --timeout=300s
-                '''
+image_tag = os.environ["IMAGE_TAG"]
+
+image_block = None
+tag_index = None
+
+for i, line in enumerate(lines):
+    if line.strip() == "image:" and not line.startswith(" "):
+        image_block = i
+        break
+
+if image_block is None:
+    raise SystemExit("Top-level image block not found")
+
+for i in range(image_block + 1, min(image_block + 10, len(lines))):
+    if lines[i].startswith("  tag:"):
+        tag_index = i
+        break
+
+if tag_index is None:
+    raise SystemExit("Top-level image tag not found")
+
+old = lines[tag_index]
+new = f'  tag: "{image_tag}"'
+
+print(f"{old} -> {new}")
+
+lines[tag_index] = new
+
+p.write_text("\n".join(lines) + "\n")
+PYUPDATE
+
+                        echo
+                        echo "===== VALIDATE GIT CHANGE ====="
+
+                        git diff --check
+
+                        git diff -- status-page-chart/values.yaml
+
+                        git config user.name "Jenkins GitOps"
+                        git config user.email "jenkins-gitops@users.noreply.github.com"
+
+                        git add status-page-chart/values.yaml
+
+                        if git diff --cached --quiet; then
+                            echo "GitOps desired state already uses image ${IMAGE_TAG}"
+                            exit 0
+                        fi
+
+                        git commit                           -m "chore(gitops): deploy image ${IMAGE_TAG} [skip ci]"
+
+                        ASKPASS_SCRIPT=$(mktemp)
+
+                        cleanup_git_auth() {
+                            rm -f "$ASKPASS_SCRIPT"
+                        }
+
+                        trap cleanup_git_auth EXIT
+
+                        cat > "$ASKPASS_SCRIPT" <<'EOF'
+#!/bin/sh
+case "$1" in
+  *Username*)
+    printf '%s\n' "$GITHUB_USER"
+    ;;
+  *Password*)
+    printf '%s\n' "$GITHUB_TOKEN"
+    ;;
+esac
+EOF
+
+                        chmod 700 "$ASKPASS_SCRIPT"
+
+                        echo
+                        echo "===== PUSH GITOPS DESIRED STATE ====="
+
+                        GIT_ASKPASS="$ASKPASS_SCRIPT"                         GIT_TERMINAL_PROMPT=0                         git push                           https://github.com/SetGaming/status-page-project.git                           HEAD:main
+                    '''
+                }
             }
         }
     }
